@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:api');
+/**
+ * Routes for the admin operations
+ */
+Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
+    Route::post('users', 'UserController@store');
+    Route::put('users/password/{userByToken}', 'UserController@password');
+});

@@ -11,14 +11,16 @@
 |
 */
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
-$factory->define(App\User::class, function (Faker\Generator $faker) {
-    static $password;
+use Carbon\Carbon;
 
+$factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
-        'name' => $faker->name,
-        'email' => $faker->unique()->safeEmail,
-        'password' => $password ?: $password = bcrypt('secret'),
-        'remember_token' => str_random(10),
+        'first_name'         => 'Johannes',
+        'last_name'          => 'Lanstrom',
+        'username'           => 'jlanstrom',
+        'email'              => 'johannes@artificial.io',
+        'role_id'            => 3,
+        'token'              => str_random(30),
+        'token_generated_at' => Carbon::now()
     ];
 });

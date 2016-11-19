@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Carbon\Carbon;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -15,7 +16,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'first_name', 'last_name', 'email', 'username',
     ];
 
     /**
@@ -26,4 +27,24 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    public function isPending()
+    {
+        return is_null($this->password);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo('App\Role');
+    }
+
+    public function organisations()
+    {
+        return $this->belongsToMany('App\Organisation');
+    }
+
+    public static function findByToken($token)
+    {
+        return self::where('token', $token)->where('token_generated_at', '>=', Carbon::now()->subHour(24))->firstOrFail();
+    }
 }
