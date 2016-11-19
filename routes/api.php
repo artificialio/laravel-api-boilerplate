@@ -13,10 +13,14 @@ use Illuminate\Http\Request;
 |
 */
 
+Route::post('login', ['uses' => 'AuthenticateController@authenticate']);
+
+Route::get('me', ['middleware' => ['jwt.auth', 'jwt.refresh'], 'uses' => 'UserController@me']);
+
 /**
  * Routes for the admin operations
  */
-Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
+Route::group(['prefix' => 'admin'], function () {
     Route::post('users', 'UserController@store');
     Route::put('users/password/{userByToken}', 'UserController@password');
 });

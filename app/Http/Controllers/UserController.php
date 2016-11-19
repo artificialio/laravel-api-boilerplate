@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
 use App\Http\Requests\UserPasswordRequest;
 use App\Http\Requests\UserRequest;
@@ -38,5 +38,10 @@ class UserController extends Controller
         $user->save();
 
         return response('Password created', 201);
+    }
+
+    public function me()
+    {
+        return;
     }
 }
