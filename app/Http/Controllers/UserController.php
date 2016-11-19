@@ -6,11 +6,13 @@ use App\Http\Requests\UserPasswordRequest;
 use App\Http\Requests\UserRequest;
 use App\Mail\Welcome;
 use App\Role;
+use App\Http\Transformer\UserTransformer;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
@@ -42,6 +44,6 @@ class UserController extends Controller
 
     public function me()
     {
-        return;
+        return $this->item(JWTAuth::parseToken()->toUser(), new UserTransformer);
     }
 }
