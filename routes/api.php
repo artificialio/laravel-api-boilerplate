@@ -20,7 +20,8 @@ Route::get('me', ['middleware' => ['jwt.auth', 'jwt.refresh'], 'uses' => 'UserCo
 /**
  * Routes for the admin operations
  */
-Route::group(['prefix' => 'admin'], function () {
+Route::group(['prefix' => 'admin', 'middleware' => ['jwt.auth', 'jwt.refresh', 'role:admin']], function () {
+    Route::get('users', 'UserController@index');
     Route::post('users', 'UserController@store');
     Route::put('users/password/{userByToken}', 'UserController@password');
 });

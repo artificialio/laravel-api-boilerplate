@@ -16,6 +16,11 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
+    public function index()
+    {
+        return $this->paginatedCollection(User::paginate(15), new UserTransformer);
+    }
+
     public function store(UserRequest $request)
     {
         $user = new User($request->all());

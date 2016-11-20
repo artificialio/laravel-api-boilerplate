@@ -15,12 +15,19 @@ use Carbon\Carbon;
 
 $factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
-        'first_name'         => 'Johannes',
-        'last_name'          => 'Lanstrom',
-        'username'           => 'jlanstrom',
-        'email'              => 'johannes@artificial.io',
+        'first_name'         => $faker->firstName,
+        'last_name'          => $faker->lastName,
+        'username'           => $faker->name,
+        'email'              => $faker->email,
         'role_id'            => 3,
         'token'              => str_random(30),
         'token_generated_at' => Carbon::now()
+    ];
+});
+
+$factory->define(App\Role::class, function (Faker\Generator $faker) {
+    return [
+        'name'         => 'user',
+        'display_name' => 'User',
     ];
 });

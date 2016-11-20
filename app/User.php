@@ -38,6 +38,15 @@ class User extends Authenticatable
         return $this->belongsTo('App\Role');
     }
 
+    public function hasRole($roles)
+    {
+        if (! is_array($roles)) $roles = [$roles];
+
+        return $this->whereHas('role', function($query) use($roles) {
+            $query->whereIn('name', $roles);
+        })->count();
+    }
+
     public function organisations()
     {
         return $this->belongsToMany('App\Organisation');
