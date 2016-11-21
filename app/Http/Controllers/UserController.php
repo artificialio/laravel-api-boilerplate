@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserPasswordRequest;
 use App\Http\Requests\UserRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Mail\Welcome;
 use App\Role;
 use App\Http\Transformer\UserTransformer;
@@ -21,34 +22,76 @@ class UserController extends Controller
         return $this->paginatedCollection(User::paginate(15), new UserTransformer);
     }
 
-    public function store(UserRequest $request)
+    public function store(UserRequest $request, User $user)
     {
-        $user = new User($request->all());
-        $user->token = str_random(30);
-        $user->token_generated_at = Carbon::now();
-        $user->role()->associate(Role::findOrFail($request->get('role_id')));
-        $user->save();
-        $user->organisations()->attach($request->get('organisations'));
+        $user->fill($request->only('first_name', 'last_name', 'username', 'email'))
+            ->withRole($request->get('role_id'))
+            ->createToken()
+            ->save();
+
+        $user->addOrganisations($request->get('organisations'));
 
         Mail::to($user->email)->send(new Welcome($user));
 
-        // Maybe return the created user (user transformer)?
-        return response('User Invited', 201);
+        return $this->setStatusCode(201)->item($user, new UserTransformer);
     }
 
-    public function password(User $user, UserPasswordRequest $request)
+    public function password($token, UserPasswordRequest $request)
     {
+        if (! $token) return $this->badRequest('no token provided');
+        if (! $user = User::findByToken($token)) return $this->badRequest('could not find user by token');
+
         $user->token = null;
         $user->token_generated_at = null;
         $user->password = bcrypt($request->get('password'));
         $user->active = true;
         $user->save();
 
-        return response('Password created', 201);
+        return $this->setStatusCode(204)->item($user, new UserTransformer);
     }
 
-    public function me()
+    public function show(User $user)
     {
-        return $this->item(JWTAuth::parseToken()->toUser(), new UserTransformer);
+        return $this->item($user, new UserTransformer);
+    }
+
+    public function showMe()
+    {
+        return $this->item(user(), new UserTransformer);
+    }
+
+    public function update(User $user, UserUpdateRequest $request)
+    {
+        $user->fill($request->only('first_name', 'last_name', 'email'))
+            ->withRole($request->get('role_id'))
+            ->save();
+
+        $user->addOrganisations($request->get('organisations'));
+
+        return $this->setStatusCode(204)->item($user, new UserTransformer);
+    }
+
+    public function updateMe(UserUpdateRequest $request)
+    {
+        $user = user();
+        $user->fill($request->only('first_name', 'last_name', 'username', 'email'))
+            ->withPassword($request->get('password'))
+            ->withRole($request->get('role_id'))
+            ->save();
+
+        $user->addOrganisations($request->get('organisations'));
+
+        return $this->setStatusCode(204)->item($user, new UserTransformer);
+    }
+
+    public function resendInvite(User $user)
+    {
+        if (! $user->hasRole('user')) return $this->badRequest('only regular users can be invited');
+
+        $user->createToken()->save();
+
+        Mail::to($user->email)->send(new Welcome($user));
+
+        return $this->setStatusCode(204)->item($user, new UserTransformer);
     }
 }

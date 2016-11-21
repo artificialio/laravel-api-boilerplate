@@ -15,13 +15,15 @@ use Carbon\Carbon;
 
 $factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
-        'first_name'         => $faker->firstName,
-        'last_name'          => $faker->lastName,
-        'username'           => $faker->name,
-        'email'              => $faker->email,
+        'first_name'         => $faker->unique()->firstName,
+        'last_name'          => $faker->unique()->lastName,
+        'username'           => $faker->unique()->name,
+        'email'              => $faker->unique()->email,
         'role_id'            => 3,
         'token'              => str_random(30),
-        'token_generated_at' => Carbon::now()
+        'token_generated_at' => Carbon::now(),
+        'active'             => true,
+        'password'           => bcrypt('password')
     ];
 });
 

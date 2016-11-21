@@ -24,12 +24,6 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Route::bind('userByToken', function ($value) {
-            if (! $value) abort(404);
-
-            return User::findByToken($value);
-        });
-
         parent::boot();
     }
 

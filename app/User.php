@@ -28,9 +28,47 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
+
+    public function getActiveFormattedAttribute()
+    {
+        return $this->active ? 'Active' : 'Suspended';
+    }
+
     public function isPending()
     {
         return is_null($this->password);
+    }
+
+    public function createToken()
+    {
+        $this->token = str_random(30);
+        $this->token_generated_at = Carbon::now();
+
+        return $this;
+    }
+
+    public function withPassword($password)
+    {
+        if ($password) {
+            $this->password = bcrypt($password);
+        }
+        return $this;
+    }
+
+    public function withRole($role)
+    {
+        if ($role) {
+            $role = Role::findOrFail($role);
+            $this->role()->associate($role->id);
+        }
+        return $this;
+    }
+
+    public function addOrganisations($organisations)
+    {
+        if ($organisations) {
+            $this->organisations()->attach($organisations);
+        }
     }
 
     public function role()
@@ -54,6 +92,6 @@ class User extends Authenticatable
 
     public static function findByToken($token)
     {
-        return self::where('token', $token)->where('token_generated_at', '>=', Carbon::now()->subHour(24))->firstOrFail();
+        return self::where('token', $token)->where('token_generated_at', '>=', Carbon::now()->subHour(24))->first();
     }
 }

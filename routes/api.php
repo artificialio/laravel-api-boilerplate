@@ -15,13 +15,21 @@ use Illuminate\Http\Request;
 
 Route::post('login', ['uses' => 'AuthenticateController@authenticate']);
 
-Route::get('me', ['middleware' => ['jwt.auth', 'jwt.refresh'], 'uses' => 'UserController@me']);
+
+Route::group(['middleware' => ['jwt.auth', 'jwt.refresh']], function () {
+    Route::get('me', ['uses' => 'UserController@showMe']);
+    Route::post('me', ['uses' => 'UserController@updateMe']);
+});
+
+Route::put('users/password/{token}', 'UserController@password');
 
 /**
- * Routes for the admin operations
+ * Admin restricted endpoints
  */
-Route::group(['prefix' => 'admin', 'middleware' => ['jwt.auth', 'jwt.refresh', 'role:admin']], function () {
+Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'role:admin']], function () {
     Route::get('users', 'UserController@index');
+    Route::get('users/{user}', 'UserController@show');
+    Route::post('users/{user}', 'UserController@update');
     Route::post('users', 'UserController@store');
-    Route::put('users/password/{userByToken}', 'UserController@password');
+    Route::put('users/{user}/invite', 'UserController@resendInvite');
 });

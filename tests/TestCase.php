@@ -1,5 +1,8 @@
 <?php
 
+use App\Role;
+use App\User;
+
 abstract class TestCase extends Illuminate\Foundation\Testing\TestCase
 {
     /**
@@ -21,5 +24,13 @@ abstract class TestCase extends Illuminate\Foundation\Testing\TestCase
         $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
         return $app;
+    }
+
+    public function loginAndGetToken(User $user)
+    {
+        return $this->post('/login', [
+            'username'     => $user->username,
+            'password'     => 'password'
+        ])->decodeResponseJson()['token'];
     }
 }

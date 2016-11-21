@@ -23,7 +23,6 @@ class UserPasswordRequest extends FormRequest
      */
     public function rules()
     {
-        $user = $this->route('userByToken');
         // TODO(johannes) add regex for password that validates:
         //•	Passwords must not contain spaces.
         //•	Passwords must contain characters from the following categories:
