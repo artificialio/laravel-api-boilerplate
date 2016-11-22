@@ -13,7 +13,7 @@ class UserTransformer extends Fractal\TransformerAbstract
             'username' => $user->username,
             'first_name' => $user->first_name,
             'email' => $user->email,
-            'active' => $user->active_formatted,
+            'active' => $user->active,
             'role' => $user->role->display_name
         ];
     }

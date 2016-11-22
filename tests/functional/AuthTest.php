@@ -1,9 +1,13 @@
 <?php
 
 use App\Role;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class AuthTest extends TestCase
 {
@@ -20,12 +24,12 @@ class AuthTest extends TestCase
     /** @test */
     function it_returns_a_jwt_token_for_valid_credentials()
     {
-        $this->post('/login', [
+        $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'sedasad'
         ])->assertResponseStatus(401);
 
-        $this->post('/login', [
+        $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'password'
         ])->assertResponseStatus(200)
@@ -61,5 +65,57 @@ class AuthTest extends TestCase
         $token = $this->loginAndGetToken($this->user);
 
         $this->get('users?token='.$token)->assertResponseStatus(200);
+    }
+
+    /** @test */
+    function it_sends_password_reset_email()
+    {
+        Notification::fake();
+        $this->put('password/email', ['email' => $this->user->email])->assertResponseStatus(200);
+        Notification::assertSentTo($this->user, ResetPassword::class);
+    }
+    
+    /** @test */
+    function it_resets_password_if_given_a_valid_token()
+    {
+        $this->put('password/email', ['email' => $this->user->email]);
+
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'adasds'
+        ])->assertResponseStatus(400);
+
+        $token = DB::table('password_resets')->where('email', $this->user->email)->first()->token;
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => $token
+        ])->assertResponseStatus(200);
+    }
+    
+    /** @test */
+    function it_throttles_multiple_failed_login_attempts()
+    {
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ]);
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ]);
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ]);
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ]);
+
+
     }
 }

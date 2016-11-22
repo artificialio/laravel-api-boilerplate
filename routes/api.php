@@ -13,7 +13,13 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::post('login', ['uses' => 'AuthenticateController@authenticate']);
+Route::post('login', ['uses' => 'Auth\AuthenticateController@authenticate']);
+
+Route::group(['prefix' => 'password'], function (){
+    Route::put('create/{token}', 'UserController@password');
+    Route::put('email', 'Auth\ForgotPasswordController@sendResetLinkEmail');
+    Route::put('reset', 'Auth\ResetPasswordController@reset');
+});
 
 
 Route::group(['middleware' => ['jwt.auth', 'jwt.refresh']], function () {
@@ -21,7 +27,8 @@ Route::group(['middleware' => ['jwt.auth', 'jwt.refresh']], function () {
     Route::post('me', ['uses' => 'UserController@updateMe']);
 });
 
-Route::put('users/password/{token}', 'UserController@password');
+
+
 
 /**
  * Admin restricted endpoints

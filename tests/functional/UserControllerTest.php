@@ -101,7 +101,7 @@ class UserControllerTest extends TestCase
         $token = $this->loginAndGetToken($this->regularUser);
         $this->call('POST','me?token='.$token, $formData);
 
-        $this->assertResponseStatus(204);
+        $this->assertResponseStatus(200);
 
         $this->assertEquals($formData['first_name'], $this->regularUser->fresh()->first_name);
         $this->assertEquals($formData['email'], $this->regularUser->fresh()->email);
@@ -118,7 +118,7 @@ class UserControllerTest extends TestCase
         ];
 
         $token = $this->loginAndGetToken($this->adminUser);
-        $this->json('post', 'users/'.$this->regularUser->id.'?token='.$token, $formData)->assertResponseStatus(204);
+        $this->json('post', 'users/'.$this->regularUser->id.'?token='.$token, $formData)->assertResponseStatus(200);
         $this->assertEquals($formData['first_name'], $this->regularUser->fresh()->first_name);
         $this->assertEquals($formData['email'], $this->regularUser->fresh()->email);
     }

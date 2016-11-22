@@ -18,6 +18,8 @@ class UserRoleSeeder extends Seeder
 
         $admin = factory(Role::class)->create(['name' => 'admin']);
         factory(\App\User::class)->create([
+            'first_name' => 'testuser',
+            'email' => 'user1@example.com',
             'username' => 'admin',
             'password' => bcrypt('password'),
             'role_id' => $admin->id

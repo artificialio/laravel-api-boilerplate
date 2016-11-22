@@ -33,7 +33,7 @@ class UserController extends Controller
 
         Mail::to($user->email)->send(new Welcome($user));
 
-        return $this->setStatusCode(201)->item($user, new UserTransformer);
+        return $this->item($user, new UserTransformer);
     }
 
     public function password($token, UserPasswordRequest $request)
@@ -47,7 +47,7 @@ class UserController extends Controller
         $user->active = true;
         $user->save();
 
-        return $this->setStatusCode(204)->item($user, new UserTransformer);
+        return $this->item($user, new UserTransformer);
     }
 
     public function show(User $user)
@@ -62,26 +62,23 @@ class UserController extends Controller
 
     public function update(User $user, UserUpdateRequest $request)
     {
-        $user->fill($request->only('first_name', 'last_name', 'email'))
+        $user->fill($request->only('first_name', 'last_name', 'email', 'active'))
             ->withRole($request->get('role_id'))
             ->save();
 
         $user->addOrganisations($request->get('organisations'));
 
-        return $this->setStatusCode(204)->item($user, new UserTransformer);
+        return $this->item($user, new UserTransformer);
     }
 
     public function updateMe(UserUpdateRequest $request)
     {
         $user = user();
-        $user->fill($request->only('first_name', 'last_name', 'username', 'email'))
+        $user->fill($request->only('first_name', 'last_name', 'email', 'username', 'email'))
             ->withPassword($request->get('password'))
-            ->withRole($request->get('role_id'))
             ->save();
 
-        $user->addOrganisations($request->get('organisations'));
-
-        return $this->setStatusCode(204)->item($user, new UserTransformer);
+        return $this->item($user, new UserTransformer);
     }
 
     public function resendInvite(User $user)
@@ -92,6 +89,6 @@ class UserController extends Controller
 
         Mail::to($user->email)->send(new Welcome($user));
 
-        return $this->setStatusCode(204)->item($user, new UserTransformer);
+        return $this->item($user, new UserTransformer);
     }
 }
