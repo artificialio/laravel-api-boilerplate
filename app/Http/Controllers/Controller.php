@@ -57,4 +57,9 @@ class Controller extends BaseController
     {
         return response(['error' => $message], 400);
     }
+
+    public function tooManyRequests($message = 'Throttle limit exceeded')
+    {
+        return response(['error' => $message], 429);
+    }
 }

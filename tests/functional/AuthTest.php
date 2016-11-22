@@ -97,25 +97,72 @@ class AuthTest extends TestCase
     }
     
     /** @test */
-    function it_throttles_multiple_failed_login_attempts()
+    function it_throttles_user_after_five_failed_login_attempts()
     {
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ]);
+        ])->assertResponseStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ]);
+        ])->assertResponseStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ]);
+        ])->assertResponseStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ]);
-
-
+        ])->assertResponseStatus(401);
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ])->assertResponseStatus(401);
+        $this->post('/auth/login', [
+            'username'     => $this->user->username,
+            'password'     => 'wrong-password'
+        ])->assertResponseStatus(429);
+    }
+    
+    /** @test */
+    function it_throttles_user_after_five_failed_reset_attempts()
+    {
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(400);
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(400);
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(400);
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(400);
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(400);
+        $this->put('password/reset', [
+            'email' => $this->user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'token' => 'wrong-token'
+        ])->assertResponseStatus(429);
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::post('login', ['uses' => 'Auth\AuthenticateController@authenticate']);
+Route::post('auth/login', ['uses' => 'Auth\AuthenticateController@authenticate']);
 
 Route::group(['prefix' => 'password'], function (){
     Route::put('create/{token}', 'UserController@password');
