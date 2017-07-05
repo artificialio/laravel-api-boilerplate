@@ -72,7 +72,7 @@ class UserControllerTest extends TestCase
             'password_confirmation' => 'foobarbaz'
         ];
 
-        $this->put('users/password/'.$user->token, $formData);
+        $this->put('password/create/'.$user->token, $formData);
 
         $this->assertFalse($user->fresh()->isPending());
     }
