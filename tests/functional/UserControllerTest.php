@@ -85,7 +85,7 @@ class UserControllerTest extends TestCase
             'password_confirmation' => 'foobarbaz'
         ];
 
-        $this->json('put', 'users/password/adsasdsadad', $formData)->assertResponseStatus(400);
+        $this->json('put', 'password/create/adsasdsadad', $formData)->assertResponseStatus(400);
     }
 
     /** @test */
