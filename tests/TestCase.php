@@ -28,7 +28,7 @@ abstract class TestCase extends Illuminate\Foundation\Testing\TestCase
 
     public function loginAndGetToken(User $user)
     {
-        return $this->post('/login', [
+        return $this->post('/auth/login', [
             'username'     => $user->username,
             'password'     => 'password'
         ])->decodeResponseJson()['token'];
