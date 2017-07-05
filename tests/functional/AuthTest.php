@@ -18,7 +18,7 @@ class AuthTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->user = factory(\App\User::class)->create();
+        $this->user = factory(\App\User::class)->create(['role_id' => factory(Role::class)->create(['name' => 'user'])->id]);
     }
 
     /** @test */
