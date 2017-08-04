@@ -19,7 +19,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
         'last_name'          => $faker->unique()->lastName,
         'username'           => $faker->unique()->name,
         'email'              => $faker->unique()->email,
-        'role_id'            => factory(App\Role::class)->create()->id,,
+        'role_id'            => factory(App\Role::class)->create()->id,
         'token'              => str_random(30),
         'token_generated_at' => Carbon::now(),
         'active'             => true,
