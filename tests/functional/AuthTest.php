@@ -1,12 +1,8 @@
 <?php
 
+use App\Notifications\ResetPassword;
 use App\Role;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 class AuthTest extends TestCase
@@ -18,30 +14,31 @@ class AuthTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->user = factory(\App\User::class)->create(['role_id' => factory(Role::class)->create(['name' => 'user'])->id]);
+        $this->user = factory(\App\User::class)->states('user')->create();
     }
 
     /** @test */
     function it_returns_a_jwt_token_for_valid_credentials()
     {
-        $this->post('/auth/login', [
-            'username'     => $this->user->username,
-            'password'     => 'sedasad'
-        ])->assertResponseStatus(401);
+        $this->json('POST', '/auth/login', [
+            'username' => $this->user->username,
+            'password' => 'sedasad'
+        ])->assertStatus(401);
 
-        $this->post('/auth/login', [
-            'username'     => $this->user->username,
-            'password'     => 'password'
-        ])->assertResponseStatus(200)
-            ->seeJsonStructure(['token']);
+        $this->json('POST', '/auth/login', [
+            'username' => $this->user->username,
+            'password' => 'password'
+        ])->assertStatus(200)
+            ->assertJsonStructure(['token']);
     }
 
     /** @test */
     function it_restricts_access_based_on_valid_jwt_token()
     {
-        $this->get('me')->assertResponseStatus(400);
+        $this->json('GET', 'me')->assertStatus(400);
 
-        $this->get('me?token='.$this->loginAndGetToken($this->user))->assertResponseStatus(200);
+        $this->sendJsonForUser($this->user, 'GET', 'me')
+            ->assertStatus(200);
     }
 
     /** @test */
@@ -49,51 +46,65 @@ class AuthTest extends TestCase
     {
         $this->user->active = false;
         $this->user->save();
-        $this->get('me?token='.$this->loginAndGetToken($this->user))->assertResponseStatus(403);
+        $this->sendJsonForUser($this->user, 'GET','me')
+            ->assertStatus(403);
     }
 
     /** @test */
     function non_admins_cannot_manage_user_accounts()
     {
-        $this->get('users?token='.$this->loginAndGetToken($this->user))->assertResponseStatus(403);
+        $this->sendJsonForUser($this->user, 'GET', 'users')
+            ->assertStatus(403);
     }
 
     /** @test */
     function admins_can_manage_user_accounts()
     {
         $this->user->withRole(factory(Role::class)->create((['name' => 'admin']))->id)->save();
-        $token = $this->loginAndGetToken($this->user);
 
-        $this->get('users?token='.$token)->assertResponseStatus(200);
+        $this->sendJsonForUser($this->user, 'GET', 'users')
+            ->assertStatus(200);
     }
 
     /** @test */
     function it_sends_password_reset_email()
     {
         Notification::fake();
-        $this->put('password/email', ['email' => $this->user->email])->assertResponseStatus(200);
+        $this->json('PUT', 'password/email', ['email' => $this->user->email])
+            ->assertStatus(200);
         Notification::assertSentTo($this->user, ResetPassword::class);
     }
     
     /** @test */
     function it_resets_password_if_given_a_valid_token()
     {
-        $this->put('password/email', ['email' => $this->user->email]);
+        Notification::fake();
 
-        $this->put('password/reset', [
+        $this->json('PUT', 'password/email', ['email' => $this->user->email])
+            ->assertStatus(200);
+
+        $this->json('PUT', 'password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'adasds'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
 
-        $token = DB::table('password_resets')->where('email', $this->user->email)->first()->token;
-        $this->put('password/reset', [
+        // Get token
+        $token = '';
+        Notification::assertSentTo([$this->user], ResetPassword::class, function ($notification) use (&$token) {
+            $token = $notification->token;
+            return true;
+        });
+
+        $response = $this->json('PUT', 'password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => $token
-        ])->assertResponseStatus(200);
+        ]);
+
+        $response->assertStatus(200);
     }
     
     /** @test */
@@ -102,27 +113,27 @@ class AuthTest extends TestCase
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(401);
+        ])->assertStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(401);
+        ])->assertStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(401);
+        ])->assertStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(401);
+        ])->assertStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(401);
+        ])->assertStatus(401);
         $this->post('/auth/login', [
             'username'     => $this->user->username,
             'password'     => 'wrong-password'
-        ])->assertResponseStatus(429);
+        ])->assertStatus(429);
     }
     
     /** @test */
@@ -133,36 +144,36 @@ class AuthTest extends TestCase
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
         $this->put('password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
         $this->put('password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
         $this->put('password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
         $this->put('password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(400);
+        ])->assertStatus(400);
         $this->put('password/reset', [
             'email' => $this->user->email,
             'password' => 'password',
             'password_confirmation' => 'password',
             'token' => 'wrong-token'
-        ])->assertResponseStatus(429);
+        ])->assertStatus(429);
     }
 }
