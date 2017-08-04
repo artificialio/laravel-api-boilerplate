@@ -33,3 +33,19 @@ $factory->define(App\Role::class, function (Faker\Generator $faker) {
         'display_name' => 'User',
     ];
 });
+
+$factory->state(App\User::class, 'admin', function ($faker) {
+    return [
+        'role_id' => function () {
+            return App\Role::firstOrCreate(['name' => 'admin'], ['display_name' => 'Administrator'])->id;
+        },
+    ];
+});
+
+$factory->state(App\User::class, 'user', function ($faker) {
+    return [
+        'role_id' => function () {
+            return App\Role::firstOrCreate(['name' => 'user'], ['display_name' => 'User'])->id;
+        },
+    ];
+});

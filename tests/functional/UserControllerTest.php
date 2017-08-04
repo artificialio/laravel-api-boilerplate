@@ -20,10 +20,13 @@ class UserControllerTest extends TestCase
     public function setUp()
     {
         parent::setUp();
+
         $this->seed(OrganisationSeeder::class);
+
         $this->faker = Faker\Factory::create();
-        $this->adminUser = factory(\App\User::class)->create(['role_id' => factory(Role::class)->create(['name' => 'admin'])->id]);
-        $this->regularUser = factory(\App\User::class)->create(['role_id' => factory(Role::class)->create(['name' => 'user'])->id]);
+        $this->adminUser = factory(\App\User::class)->states('user')->create();
+        $this->regularUser = factory(\App\User::class)->states('admin')->create();
+
         Mail::fake();
     }
 
@@ -39,13 +42,16 @@ class UserControllerTest extends TestCase
             'organisations'  => [1,2]
         ];
 
-        $this->json('post', 'users?token='.$this->loginAndGetToken($this->adminUser), $formData);
-        array_pop($formData);
-        $this->seeInDatabase('users', $formData);
+        $this->sendJsonForUser($this->adminUser, 'POST', 'users', $formData);
 
-        Mail::assertSentTo($formData['email'], Welcome::class);
+        array_pop($formData);
+        $this->assertDatabaseHas('users', $formData);
+
+        Mail::assertSent(Welcome::class, function ($mailable) use ($formData) {
+            return $mailable->hasTo($formData['email']);
+        });
     }
-    
+
     /** @test */
     function user_creation_returns_422_on_invalid_data()
     {
@@ -56,9 +62,10 @@ class UserControllerTest extends TestCase
             'organisations'  => [1,2]
         ];
 
-        $this->json('post', 'users?token='.$this->loginAndGetToken($this->adminUser), $formData)
-            ->assertResponseStatus(422)
-            ->seeJsonStructure(['first_name', 'last_name']);
+        $this->sendJsonForUser($this->adminUser, 'POST', 'users', $formData)
+            ->assertStatus(422)
+            ->assertJsonStructure(['first_name', 'last_name']);
+
     }
 
     /** @test */
@@ -72,7 +79,7 @@ class UserControllerTest extends TestCase
             'password_confirmation' => 'foobarbaz'
         ];
 
-        $this->put('password/create/'.$user->token, $formData);
+        $this->json('PUT', 'password/create/' . $user->token, $formData);
 
         $this->assertFalse($user->fresh()->isPending());
     }
@@ -85,7 +92,8 @@ class UserControllerTest extends TestCase
             'password_confirmation' => 'foobarbaz'
         ];
 
-        $this->json('put', 'password/create/adsasdsadad', $formData)->assertResponseStatus(400);
+        $this->json('PUT', 'password/create/adsasdsadad', $formData)
+            ->assertStatus(400);
     }
 
     /** @test */
@@ -98,10 +106,8 @@ class UserControllerTest extends TestCase
             'email'      => $this->faker->unique()->email,
         ];
 
-        $token = $this->loginAndGetToken($this->regularUser);
-        $this->call('POST','me?token='.$token, $formData);
-
-        $this->assertResponseStatus(200);
+        $this->sendJsonForUser($this->regularUser, 'POST', 'me', $formData)
+            ->assertStatus(200);
 
         $this->assertEquals($formData['first_name'], $this->regularUser->fresh()->first_name);
         $this->assertEquals($formData['email'], $this->regularUser->fresh()->email);
@@ -117,8 +123,9 @@ class UserControllerTest extends TestCase
             'email'      => $this->faker->unique()->email,
         ];
 
-        $token = $this->loginAndGetToken($this->adminUser);
-        $this->json('post', 'users/'.$this->regularUser->id.'?token='.$token, $formData)->assertResponseStatus(200);
+        $this->sendJsonForUser($this->adminUser, 'POST', 'users/' . $this->regularUser->id, $formData)
+            ->assertStatus(200);
+
         $this->assertEquals($formData['first_name'], $this->regularUser->fresh()->first_name);
         $this->assertEquals($formData['email'], $this->regularUser->fresh()->email);
     }
@@ -131,10 +138,13 @@ class UserControllerTest extends TestCase
         $this->assertEquals(null, User::findByToken($user->token));
 
         // When I resend my invitation for that user
-        $this->put('users/'.$user->id.'/invite?token='.$this->loginAndGetToken($this->adminUser));
+        $this->sendJsonForUser($this->adminUser, 'PUT', 'users/' . $user->id . '/invite')
+            ->assertStatus(200);
 
         // Then the receives an invite email
-        Mail::assertSentTo($user->email, Welcome::class);
+        Mail::assertSent(Welcome::class, function($mailable) use ($user) {
+            return $mailable->hasTo($user->email);
+        });
 
         // And the user is "findable" by the token again
         $this->assertEquals(get_class($user), get_class(User::findByToken($user->fresh()->token)));
