@@ -64,7 +64,7 @@ class UserControllerTest extends TestCase
 
         $this->sendJsonForUser($this->adminUser, 'POST', 'users', $formData)
             ->assertStatus(422)
-            ->assertJsonStructure(['first_name', 'last_name']);
+            ->assertJsonStructure(['errors' => ['first_name', 'last_name']]);
 
     }
 
